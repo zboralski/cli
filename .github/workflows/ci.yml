@@ -21,26 +21,26 @@ jobs:
       - name: Verify File Headers
         run: go run ./cmd/copyright --verify-only
 
-  # coverage: // TODO uncomment once repo is public as codecov token won't be required
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v3
-  #       with:
-  #         go-version-file: "go.mod"
-  #         check-latest: true
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
 
-  #     - name: Race
-  #       run: go test -v -race ./...
-  #       continue-on-error: true
+      - name: Race
+        run: go test -v -race ./...
+        continue-on-error: true
 
-  #     - name: Test
-  #       run: go test -v -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
+      - name: Test
+        run: go test -v -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
 
-  #     - name: Coverage
-  #       uses: codecov/codecov-action@v3
+      - name: Coverage
+        uses: codecov/codecov-action@v3
 
   test:
     strategy:
