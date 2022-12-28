@@ -29,6 +29,13 @@ import (
 func BuildApp(version string) *cli.App {
 	defaultCfg, _ := sconfig.NewDefaultConfig()
 
+	cli.HelpFlag = &cli.BoolFlag{
+		Name:    "help",
+		Aliases: []string{"h"},
+		Usage:   "Show help",
+		DefaultText: "",
+	}
+	
 	app := cli.NewApp()
 	app.Name = "temporal"
 	app.Usage = "Temporal command-line interface and development server"
