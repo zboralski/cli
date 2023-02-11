@@ -20,6 +20,7 @@ import (
 	"github.com/temporalio/cli/common/stringify"
 	"github.com/temporalio/cli/dataconverter"
 	"github.com/temporalio/tctl-kit/pkg/color"
+	"github.com/temporalio/tctl-kit/pkg/iterator"
 	"github.com/temporalio/tctl-kit/pkg/output"
 	"github.com/temporalio/tctl-kit/pkg/pager"
 	"github.com/urfave/cli/v2"
@@ -35,6 +36,7 @@ import (
 	clispb "go.temporal.io/server/api/cli/v1"
 	scommon "go.temporal.io/server/common"
 	"go.temporal.io/server/common/backoff"
+	"go.temporal.io/server/common/codec"
 	"go.temporal.io/server/common/collection"
 	"go.temporal.io/server/common/convert"
 	"go.temporal.io/server/common/primitives/timestamp"
@@ -166,7 +168,7 @@ func StartWorkflow(c *cli.Context, printProgress bool) error {
 	}
 
 	if printProgress {
-		return printWorkflowProgress(c, wid, resp.GetRunID(), true)
+		return printWorkflowProgress(c, wid, resp.GetRunID(), true, "")
 	}
 
 	return nil
@@ -268,7 +270,7 @@ func (h *historyIterator) Next() (interface{}, error) {
 }
 
 // helper function to print workflow progress with time refresh every second
-func printWorkflowProgress(c *cli.Context, wid, rid string, watch bool) error {
+func printWorkflowProgress(c *cli.Context, wid, rid string, watch bool, exportPath string) error {
 	isJSON := false
 	if c.IsSet(output.FlagOutput) {
 		outputFlag := c.String(output.FlagOutput)
@@ -292,7 +294,7 @@ func printWorkflowProgress(c *cli.Context, wid, rid string, watch bool) error {
 		fmt.Println(color.Magenta(c, "Progress:"))
 	}
 
-	var lastEvent historypb.HistoryEvent // used for print result of this run
+	var lastEvent historypb.HistoryEvent
 
 	po := &output.PrintOptions{
 		Fields:     []string{"ID", "Time", "Type"},
@@ -301,9 +303,15 @@ func printWorkflowProgress(c *cli.Context, wid, rid string, watch bool) error {
 	}
 	errChan := make(chan error)
 	go func() {
-		hIter := sdkClient.GetWorkflowHistory(tcCtx, wid, rid, watch, enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
-		iter := &historyIterator{iter: hIter, maxFieldLength: maxFieldLength, lastEvent: &lastEvent}
-		err = output.PrintIterator(c, iter, po)
+		iter := sdkClient.GetWorkflowHistory(tcCtx, wid, rid, watch, enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
+		hIter := &historyIterator{iter: iter, maxFieldLength: maxFieldLength, lastEvent: &lastEvent}
+
+		if exportPath != "" {
+			err = exportHistory(hIter, exportPath)
+		} else {
+			err = output.PrintIterator(c, hIter, po)
+		}
+
 		if err != nil {
 			errChan <- err
 			return
@@ -341,6 +349,31 @@ func printWorkflowProgress(c *cli.Context, wid, rid string, watch bool) error {
 			return err
 		}
 	}
+}
+
+func exportHistory(iter iterator.Iterator, exportPath string) error {
+	var events []*historypb.HistoryEvent
+	for iter.HasNext() {
+		event, err := iter.Next()
+		if err != nil {
+			return err
+
+		}
+		events = append(events, event.(*historypb.HistoryEvent))
+	}
+
+	history := &historypb.History{}
+	history.Events = events
+	serializer := codec.NewJSONPBIndentEncoder(" ")
+	data, err := serializer.Encode(history)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(exportPath, data, 0666); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func TerminateWorkflow(c *cli.Context) error {
@@ -800,10 +833,10 @@ func printRunStatus(c *cli.Context, event *historypb.HistoryEvent) {
 func ShowHistory(c *cli.Context) error {
 	wid := c.String(common.FlagWorkflowID)
 	rid := c.String(common.FlagRunID)
-
+	export := c.String(common.FlagExportPath)
 	follow := c.Bool(output.FlagFollow)
 
-	return printWorkflowProgress(c, wid, rid, follow)
+	return printWorkflowProgress(c, wid, rid, follow, export)
 }
 
 // ResetWorkflow reset workflow

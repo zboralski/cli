@@ -45,6 +45,7 @@ var (
 	FlagEnv                        = "env"
 	FlagEventID                    = "event-id"
 	FlagExcludeFile                = "exclude-file"
+	FlagExportPath                 = "export-path"
 	FlagFold                       = "fold"
 	FlagFollowAlias                = []string{"f"}
 	FlagHeadless                   = "headless"
@@ -263,6 +264,11 @@ var FlagsForShowWorkflow = []cli.Flag{
 		Value:    false,
 		Category: CategoryMain,
 	},
+	&cli.StringFlag{
+		Name:     FlagExportPath,
+		Usage:    FlagExportPathDefinition,
+		Category: CategoryMain,
+	},
 }
 
 var FlagsForStartWorkflow = append(FlagsForStartWorkflowT,
@@ -312,13 +318,13 @@ var FlagsForStartWorkflowT = []cli.Flag{
 		Category: CategoryMain,
 	},
 	&cli.StringFlag{
-		Name: FlagCronSchedule,
-		Usage: FlagCronScheduleDefinition,
+		Name:     FlagCronSchedule,
+		Usage:    FlagCronScheduleDefinition,
 		Category: CategoryMain,
 	},
 	&cli.StringFlag{
-		Name: FlagWorkflowIDReusePolicy,
-		Usage: FlagWorkflowIdReusePolicyDefinition,
+		Name:     FlagWorkflowIDReusePolicy,
+		Usage:    FlagWorkflowIdReusePolicyDefinition,
 		Category: CategoryMain,
 	},
 	&cli.StringSliceFlag{
@@ -328,8 +334,8 @@ var FlagsForStartWorkflowT = []cli.Flag{
 		Category: CategoryMain,
 	},
 	&cli.StringFlag{
-		Name: FlagInputFile,
-		Usage: FlagInputFileDefinition,
+		Name:     FlagInputFile,
+		Usage:    FlagInputFileDefinition,
 		Category: CategoryMain,
 	},
 	&cli.IntFlag{
@@ -376,8 +382,8 @@ var FlagsForStackTraceQuery = append(FlagsForExecution, []cli.Flag{
 		Category: CategoryMain,
 	},
 	&cli.StringFlag{
-		Name: FlagInputFile,
-		Usage: FlagInputFileSTQDefinition,
+		Name:     FlagInputFile,
+		Usage:    FlagInputFileSTQDefinition,
 		Category: CategoryMain,
 	},
 	&cli.StringFlag{
